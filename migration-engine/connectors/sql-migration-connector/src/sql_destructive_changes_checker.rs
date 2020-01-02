@@ -3,7 +3,10 @@ use crate::{
     SqlResult, TableChange,
 };
 use migration_connector::*;
-use quaint::{ast::*, prelude::Queryable};
+use quaint::{
+    ast::*,
+    prelude::{Queryable, SqlFamily},
+};
 use sql_schema_describer::SqlSchemaDescriberBackend;
 use std::sync::Arc;
 
@@ -15,6 +18,13 @@ pub struct SqlDestructiveChangesChecker {
 }
 
 impl SqlDestructiveChangesChecker {
+    fn is_on_sqlite(&self) -> bool {
+        match self.connection_info.sql_family() {
+            SqlFamily::Sqlite => true,
+            _ => false,
+        }
+    }
+
     async fn check_table_drop(
         &self,
         table_name: &str,
@@ -103,7 +113,7 @@ impl SqlDestructiveChangesChecker {
             .column(&alter_column.name)
             .expect("unsupported column renaming");
 
-        if values_count > 0 {
+        if values_count > 0 && !self.is_on_sqlite() {
             diagnostics.add_warning(MigrationWarning {
                 description: format!(
                                  "You are about to alter the column `{column_name}` on the `{table_name}` table, which still contains {values_count} non-null values. The data in that column will be lost.",

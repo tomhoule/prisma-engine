@@ -223,19 +223,28 @@ async fn altering_a_column_with_non_null_values_should_warn(api: &TestApi) {
     let result = api.infer_and_apply(&dm2).await;
     let final_database_schema = result.sql_schema;
 
-    // The schema should not change because the migration should not run if there are warnings
-    // and the force flag isn't passed.
-    assert_eq!(original_database_schema, final_database_schema);
+    if api.is_sqlite() {
+        // On SQLite we do alter columns without data loss, through the table re-creation process.
+        assert_eq!(result.migration_output.warnings, &[],);
 
-    assert_eq!(
-        result.migration_output.warnings,
-        &[MigrationWarning {
-            description:
-                "You are about to alter the column `age` on the `Test` table, which still contains 2 non-null values. \
-                 The data in that column will be lost."
-                    .to_owned()
-        }]
-    );
+        // The migration should go through.
+        assert_ne!(original_database_schema, final_database_schema);
+    } else {
+        // The schema should not change because the migration should not run if there are warnings
+        // and the force flag isn't passed.
+        assert_eq!(original_database_schema, final_database_schema);
+
+        // On other databases, alter column leads to data loss.
+        assert_eq!(
+            result.migration_output.warnings,
+            &[MigrationWarning {
+                description:
+                    "You are about to alter the column `age` on the `Test` table, which still contains 2 non-null values. \
+                     The data in that column will be lost."
+                        .to_owned()
+            }]
+        );
+    }
 }
 
 #[test_each_connector]

@@ -346,7 +346,7 @@ async fn renaming_a_field_where_the_column_was_already_renamed_must_work(api: &T
     assert!(final_result.table_bang("Blog").column("title").is_none());
 }
 
-#[test_each_connector(log = "debug")]
+#[test_each_connector]
 async fn removing_a_default_from_a_non_nullable_foreign_key_column_must_warn(api: &TestApi) {
     let sql_family = api.sql_family();
     let sql_schema = api
