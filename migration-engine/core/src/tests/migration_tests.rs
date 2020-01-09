@@ -1,3 +1,5 @@
+mod indexes;
+
 use super::test_harness::*;
 use crate::commands::{
     CalculateDatabaseStepsCommand, CalculateDatabaseStepsInput, InferMigrationStepsCommand, InferMigrationStepsInput,
@@ -1102,7 +1104,7 @@ async fn index_renaming_must_work_when_renaming_to_default(api: &TestApi) {
     }
 }
 
-#[test_each_connector(log = "debug")]
+#[test_each_connector]
 async fn index_renaming_must_work_when_renaming_to_custom(api: &TestApi) -> TestResult {
     let dm1 = r#"
             model A {
