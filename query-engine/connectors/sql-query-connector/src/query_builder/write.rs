@@ -1,11 +1,9 @@
-use crate::error::SqlError;
 use prisma_models::*;
 use quaint::ast::*;
-use std::convert::TryFrom;
 
-const PARAMETER_LIMIT: usize = 10000;
+// const PARAMETER_LIMIT: usize = 10000;
 
-pub fn create_record(model: &ModelRef, mut args: PrismaArgs) -> (Insert<'static>, Option<GraphqlId>) {
+pub fn create_record(_model: &ModelRef, _args: PrismaArgs) -> (Insert<'static>, Option<GraphqlId>) {
     // let mut id_fields = model.primary_identifier();
     // let return_id = args
     //     .get_field_value(&id_field.name)
@@ -55,10 +53,11 @@ pub fn create_record(model: &ModelRef, mut args: PrismaArgs) -> (Insert<'static>
     todo!()
 }
 
+/*
 pub fn create_relation_table_records(
-    field: &RelationFieldRef,
-    parent_id: &GraphqlId,
-    child_ids: &[GraphqlId],
+    _field: &RelationFieldRef,
+    _parent_id: &GraphqlId,
+    _child_ids: &[GraphqlId],
 ) -> Query<'static> {
     // let relation = field.relation();
     // let parent_column = field.relation_column(false);
@@ -88,9 +87,9 @@ pub fn create_relation_table_records(
 }
 
 pub fn delete_relation_table_records(
-    field: &RelationFieldRef,
-    parent_id: &GraphqlId,
-    child_ids: &[GraphqlId],
+    _field: &RelationFieldRef,
+    _parent_id: &GraphqlId,
+    _child_ids: &[GraphqlId],
 ) -> Query<'static> {
     // let relation = field.relation();
     // let parent_column = field.relation_column(false);
@@ -106,7 +105,7 @@ pub fn delete_relation_table_records(
     todo!()
 }
 
-pub fn update_many(model: &ModelRef, ids: &[&GraphqlId], args: &PrismaArgs) -> crate::Result<Vec<Update<'static>>> {
+pub fn update_many(_model: &ModelRef, _ids: &[&GraphqlId], _args: &PrismaArgs) -> crate::Result<Vec<Update<'static>>> {
     // if args.args.is_empty() || ids.is_empty() {
     //     return Ok(Vec::new());
     // }
@@ -141,7 +140,7 @@ pub fn update_many(model: &ModelRef, ids: &[&GraphqlId], args: &PrismaArgs) -> c
     todo!()
 }
 
-pub fn delete_many(model: &ModelRef, ids: &[&GraphqlId]) -> Vec<Delete<'static>> {
+pub fn delete_many(_model: &ModelRef, _ids: &[&GraphqlId]) -> Vec<Delete<'static>> {
     // let mut deletes = Vec::new();
 
     // for chunk in ids.chunks(PARAMETER_LIMIT).into_iter() {
@@ -153,3 +152,5 @@ pub fn delete_many(model: &ModelRef, ids: &[&GraphqlId]) -> Vec<Delete<'static>>
 
     todo!()
 }
+
+*/
