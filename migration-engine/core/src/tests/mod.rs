@@ -7,5 +7,6 @@ mod existing_databases_tests;
 mod infer_migration_steps_tests;
 mod migration_persistence_tests;
 mod migration_tests;
+mod sled_tests;
 mod test_harness;
 mod unapply_migration_tests;

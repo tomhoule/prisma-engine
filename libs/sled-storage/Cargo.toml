@@ -1,0 +1,12 @@
+[package]
+name = "sled-storage"
+version = "0.1.0"
+authors = ["Tom Houlé <tom@tomhoule.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sled = "0.30.3"
+serde = "1.0.104"
+anyhow = "1.0.26"

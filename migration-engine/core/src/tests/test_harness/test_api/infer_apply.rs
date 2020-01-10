@@ -12,6 +12,15 @@ pub struct InferApply<'a> {
 }
 
 impl<'a> InferApply<'a> {
+    pub fn new(schema: &'a str, api: &'a dyn GenericApi) -> Self {
+        InferApply {
+            api,
+            schema,
+            migration_id: None,
+            force: None,
+        }
+    }
+
     pub fn force(mut self, force: Option<bool>) -> Self {
         self.force = force;
         self

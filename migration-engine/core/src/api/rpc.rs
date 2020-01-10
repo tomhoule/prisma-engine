@@ -60,16 +60,23 @@ impl RpcApi {
             errors: vec!["There is no datasource in the configuration.".to_string()],
         })?;
 
-        let connector = match source.connector_type() {
-            provider if [MYSQL_SOURCE_NAME, POSTGRES_SOURCE_NAME, SQLITE_SOURCE_NAME].contains(&provider) => {
-                SqlMigrationConnector::new(&source.url().value, provider).await?
+        let mut rpc_api: RpcApi = match source.connector_type() {
+            provider if [MYSQL_SOURCE_NAME, POSTGRES_SOURCE_NAME, SQLITE_SOURCE_NAME].contains(&provider) => Self {
+                io_handler: IoHandler::default(),
+                executor: Arc::new(
+                    MigrationApi::new(SqlMigrationConnector::new(&source.url().value, provider).await?).await?,
+                ),
+            },
+            "sled" => {
+                let database_url = source.url().value.clone();
+                let db = sled::open(&database_url).unwrap();
+                let connector = sled_connector::SledConnector::new(database_url, db);
+                Self {
+                    io_handler: IoHandler::default(),
+                    executor: Arc::new(MigrationApi::new(connector).await?),
+                }
             }
             x => unimplemented!("Connector {} is not supported yet", x),
-        };
-
-        let mut rpc_api = Self {
-            io_handler: IoHandler::default(),
-            executor: Arc::new(MigrationApi::new(connector).await?),
         };
 
         for cmd in AVAILABLE_COMMANDS {

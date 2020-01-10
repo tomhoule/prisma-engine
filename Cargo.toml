@@ -5,6 +5,7 @@ members = [
   "introspection-engine/connectors/sql-introspection-connector",
   "migration-engine/connectors/migration-connector",
   "migration-engine/connectors/sql-migration-connector",
+  "migration-engine/connectors/sled-connector",
   "migration-engine/core",
   "query-engine/connectors/query-connector",
   "query-engine/connectors/sql-query-connector",
@@ -17,6 +18,7 @@ members = [
   "libs/sql-schema-describer",
   "libs/user-facing-errors",
   "libs/prisma-models",
+  "libs/sled-storage",
 ]
 
 [patch.crates-io]

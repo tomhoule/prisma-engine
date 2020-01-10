@@ -229,3 +229,29 @@ fn strip_test_attribute(function: &mut ItemFn) {
 
     function.attrs = new_attrs;
 }
+
+#[proc_macro_attribute]
+pub fn test_sled(_attr: TokenStream, input: TokenStream) -> TokenStream {
+    let test_function = parse_macro_input!(input as ItemFn);
+
+    let test_impl_name = &test_function.sig.ident;
+    let test_impl_name_str = format!("{}", test_impl_name);
+
+    let test_fn_name = Ident::new(&format!("{}_on_sled", &test_function.sig.ident), Span::call_site());
+
+    let tokens = quote! {
+        #[test]
+        fn #test_fn_name() {
+            let fut = async {
+                let api = SledApi::new(#test_impl_name_str).await;
+                #test_impl_name(&api).await
+            };
+
+            async_std::task::block_on(fut).unwrap();
+        }
+
+        #test_function
+    };
+
+    tokens.into()
+}

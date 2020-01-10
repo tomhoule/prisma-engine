@@ -1,7 +1,7 @@
 use crate::{error::ConnectorError, steps::*};
 use chrono::{DateTime, Utc};
 use datamodel::{ast::SchemaAst, Datamodel};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// This trait is implemented by each connector. It provides a generic API to store and retrieve [Migration](struct.Migration.html) records.
 #[async_trait::async_trait]
@@ -88,7 +88,7 @@ pub trait MigrationPersistence: Send + Sync {
 }
 
 /// The representation of a migration as persisted through [MigrationPersistence](trait.MigrationPersistence.html).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Migration {
     pub name: String,
     pub revision: usize,
@@ -196,7 +196,7 @@ impl IsWatchMigration for Migration {
     }
 }
 
-#[derive(Debug, Serialize, PartialEq, Clone, Copy)]
+#[derive(Debug, Serialize, PartialEq, Clone, Copy, Deserialize)]
 pub enum MigrationStatus {
     Pending,
     MigrationInProgress,
