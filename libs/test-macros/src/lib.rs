@@ -1,5 +1,6 @@
 extern crate proc_macro;
 
+mod test_dis;
 mod test_each_connector;
 
 use darling::FromMeta;
@@ -102,4 +103,9 @@ fn strip_test_attribute(function: &mut ItemFn) {
         .collect();
 
     function.attrs = new_attrs;
+}
+
+#[proc_macro_attribute]
+pub fn test_dis(attr: TokenStream, input: TokenStream) -> TokenStream {
+    test_dis::test_dis_impl(attr, input)
 }
