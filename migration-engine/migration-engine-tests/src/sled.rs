@@ -30,7 +30,9 @@ pub struct SchemaAssertion(schema::Schema);
 type AssertionResult<T> = anyhow::Result<T>;
 
 impl SchemaAssertion {
-        anyhow::ensure!(table.is_some(), "Assertion failed. Could not find table {}", table_name);
+    pub fn assert_has_table(self, table_name: &str) -> AssertionResult<Self> {
+        let has_table = self.0.tables.iter().any(|table| table.name == table_name);
+        anyhow::ensure!(has_table, "Assertion failed. Could not find table {}", table_name);
         Ok(self)
     }
 

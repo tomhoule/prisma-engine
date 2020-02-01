@@ -2,7 +2,6 @@ mod assertions;
 mod command_helpers;
 mod misc_helpers;
 pub mod sled;
-pub mod sled;
 pub mod sql;
 mod step_helpers;
 mod test_api;

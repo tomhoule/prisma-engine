@@ -1,8 +1,8 @@
-use crate::schema::Table;
+use crate::schema::Column;
 
 pub(crate) struct RecordWriter<'a, T> {
-    data: &'a T,
-    table_definition: &'a Table,
+    pub(crate) data: &'a T,
+    pub(crate) columns: &'a [Column],
 }
 
 #[derive(Debug)]

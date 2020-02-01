@@ -45,13 +45,21 @@ impl Connection {
         Ok(())
     }
 
-    pub fn insert(&self, table: &str, value: impl serde::Serialize) -> Result<(), anyhow::Error> {
-        let record = record_writer::RecordWriter {
-            table_definition: self.get_table(table)?,
+    pub fn insert(&self, table_name: &str, value: impl serde::Serialize) -> Result<(), anyhow::Error> {
+        let table = self.get_table(table_name)?;
+        let key_record = record_writer::RecordWriter {
+            columns: &table.id_columns,
             data: &value,
         };
-        let buf = serde_json
-        // validate_insert(self.get_table(table)?, value)?;
+        let key_buf = serde_json::to_vec(&key_record)?;
+        let value_record = record_writer::RecordWriter {
+            columns: &table.columns,
+            data: &value,
+        };
+        let value_buf = serde_json::to_vec(&value_record)?;
+
+        let tree = self.db.open_tree(table_name)?;
+        tree.insert(key_buf, value_buf)?;
 
         Ok(())
     }
@@ -64,26 +72,28 @@ impl Connection {
             .ok_or_else(|| anyhow::anyhow!("Unknown table: `{}`", name))
     }
 
-    pub fn get<'a, T: serde::Deserialize<'a>>(
+    pub fn get<'a, T: serde::de::DeserializeOwned>(
         &'a self,
         table: &str,
         id: &[&DatabaseValue<'_>],
     ) -> Result<Option<T>, anyhow::Error> {
         let tree = self.db.open_tree(table)?;
+        let table = self.get_table(table)?;
         let id_bytes = serde_json::to_vec(id)?;
         let bytes = tree.get(&id_bytes)?;
 
         let record = match bytes {
             Some(bytes) => {
-                let values: Vec<DatabaseValue> = {
-                    // serde_json::from_slice(bytes.as_ref())?
-                    todo!()
-                };
-                let columns = self.get_table(table)?.columns.as_slice();
+                record_reader::read_record(&id_bytes, &bytes, table)?
+                // let values: Vec<DatabaseValue> = {
+                //     // serde_json::from_slice(bytes.as_ref())?
+                //     todo!()
+                // };
+                // let columns = self.get_table(table)?.columns.as_slice();
 
-                anyhow::ensure!(columns.len() == values.len(), "columns count");
+                // anyhow::ensure!(columns.len() == values.len(), "columns count");
 
-                Some(ResultRow { columns, values })
+                // Some(ResultRow { columns, values })
             }
             None => None,
         };
@@ -91,25 +101,22 @@ impl Connection {
         Ok(record)
     }
 
-    pub fn scan<'a>(&'a self, table: &str) -> anyhow::Result<impl Iterator<Item = anyhow::Result<ResultRow<'a>>> + 'a> {
+    pub fn scan<'a, T: serde::de::DeserializeOwned>(
+        &'a self,
+        table: &str,
+    ) -> anyhow::Result<impl Iterator<Item = anyhow::Result<T>> + 'a> {
         let tree = self.db.open_tree(table)?;
-        let columns = self.get_table(table)?.columns.as_slice();
+        let table = self.get_table(table)?;
 
-        let iterator = tree.iter().map(move |bytes| {
-            todo!()
-            // serde_json::from_slice(bytes?.1.as_ref())
-            //     .map_err(Into::into)
-            //     .map(move |values: Vec<DatabaseValue>| ResultRow { columns, values })
+        let iterator = tree.iter().map(move |result| {
+            result
+                .map_err(anyhow::Error::from)
+                .and_then(move |(key, value)| record_reader::read_record(&key, &value, table))
         });
 
         Ok(iterator)
     }
 }
-
-// pub struct ResultRow<'a> {
-//     columns: &'a [schema::Column],
-//     values: Vec<DatabaseValue<'a>>,
-// }
 
 fn get_schema(system_table: &sled::Tree) -> Result<Schema, anyhow::Error> {
     let schema = system_table

@@ -6,7 +6,8 @@ pub struct SledMigrationPersistence<'a> {
 
 impl SledMigrationPersistence<'_> {
     fn conn(&self) -> &sled_wrapper::Connection {
-        &self.connector.connection    }
+        &self.connector.connection
+    }
 }
 
 #[async_trait::async_trait]
@@ -36,9 +37,11 @@ impl MigrationPersistence for SledMigrationPersistence<'_> {
     }
 
     async fn load_all(&self) -> ConnectorResult<Vec<Migration>> {
-        let rows = self.conn().scan("_Migrations").unwrap().map(|result| result.unwrap());
-        rows.map(|row| Migration {});
-
+        self.conn()
+            .scan("_Migrations")
+            .map_err(|err| ConnectorError::from_kind(ErrorKind::QueryError(err)))?
+            .map(|result| result.map_err(|err| ConnectorError::from_kind(ErrorKind::QueryError(err))))
+            .collect::<Result<Vec<_>, _>>()
     }
 
     async fn create(&self, migration: Migration) -> ConnectorResult<Migration> {
@@ -55,6 +58,11 @@ fn migration_table() -> sled_wrapper::schema::Table {
 
     schema::Table {
         name: "_Migrations".to_owned(),
+        id_columns: vec![schema::Column {
+            name: "revision".to_owned(),
+            required: true,
+            r#type: schema::ColumnType::I32,
+        }],
         columns: vec![
             schema::Column {
                 name: "name".to_owned(),
