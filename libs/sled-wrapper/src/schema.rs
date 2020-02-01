@@ -14,6 +14,7 @@ impl Schema {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Table {
     pub name: String,
+    pub id_columns: Vec<Column>,
     pub columns: Vec<Column>,
 }
 
@@ -21,6 +22,7 @@ impl Table {
     pub fn new(name: impl Into<String>) -> Self {
         Table {
             name: name.into(),
+            id_columns: Vec::new(),
             columns: Vec::new(),
         }
     }

@@ -1,4 +1,5 @@
 pub mod migrations;
+mod record_reader;
 mod record_writer;
 pub mod schema;
 
@@ -44,8 +45,13 @@ impl Connection {
         Ok(())
     }
 
-    pub fn insert(&self, table: &str, value: &HashMap<&str, DatabaseValue>) -> Result<(), anyhow::Error> {
-        validate_insert(self.get_table(table)?, value)?;
+    pub fn insert(&self, table: &str, value: impl serde::Serialize) -> Result<(), anyhow::Error> {
+        let record = record_writer::RecordWriter {
+            table_definition: self.get_table(table)?,
+            data: &value,
+        };
+        let buf = serde_json
+        // validate_insert(self.get_table(table)?, value)?;
 
         Ok(())
     }
@@ -58,14 +64,21 @@ impl Connection {
             .ok_or_else(|| anyhow::anyhow!("Unknown table: `{}`", name))
     }
 
-    pub fn get<'a>(&'a self, table: &str, id: &[&DatabaseValue<'_>]) -> Result<Option<ResultRow<'a>>, anyhow::Error> {
+    pub fn get<'a, T: serde::Deserialize<'a>>(
+        &'a self,
+        table: &str,
+        id: &[&DatabaseValue<'_>],
+    ) -> Result<Option<T>, anyhow::Error> {
         let tree = self.db.open_tree(table)?;
         let id_bytes = serde_json::to_vec(id)?;
         let bytes = tree.get(&id_bytes)?;
 
         let record = match bytes {
             Some(bytes) => {
-                let values: Vec<DatabaseValue> = serde_json::from_slice(bytes.as_ref())?;
+                let values: Vec<DatabaseValue> = {
+                    // serde_json::from_slice(bytes.as_ref())?
+                    todo!()
+                };
                 let columns = self.get_table(table)?.columns.as_slice();
 
                 anyhow::ensure!(columns.len() == values.len(), "columns count");
@@ -83,19 +96,20 @@ impl Connection {
         let columns = self.get_table(table)?.columns.as_slice();
 
         let iterator = tree.iter().map(move |bytes| {
-            serde_json::from_slice(bytes?.1.as_ref())
-                .map_err(Into::into)
-                .map(move |values: Vec<DatabaseValue>| ResultRow { columns, values })
+            todo!()
+            // serde_json::from_slice(bytes?.1.as_ref())
+            //     .map_err(Into::into)
+            //     .map(move |values: Vec<DatabaseValue>| ResultRow { columns, values })
         });
 
         Ok(iterator)
     }
 }
 
-pub struct ResultRow<'a> {
-    columns: &'a [schema::Column],
-    values: Vec<DatabaseValue<'a>>,
-}
+// pub struct ResultRow<'a> {
+//     columns: &'a [schema::Column],
+//     values: Vec<DatabaseValue<'a>>,
+// }
 
 fn get_schema(system_table: &sled::Tree) -> Result<Schema, anyhow::Error> {
     let schema = system_table
@@ -132,6 +146,7 @@ fn validate_insert(table: &schema::Table, value: &HashMap<&str, DatabaseValue>) 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum DatabaseValue<'a> {
+    #[serde(borrow)]
     String(Cow<'a, str>),
     I32(i32),
     F64(f64), // maybe replace with decimal
