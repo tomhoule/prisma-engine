@@ -1,6 +1,7 @@
 pub use super::misc_helpers::TestResult;
 pub use super::test_api::*;
 
+use migration_connector::MigrationConnector;
 use migration_core::api::MigrationApi;
 use sled_migration_connector::{sled_wrapper::schema, SledMigration, SledMigrationConnector};
 
@@ -50,6 +51,7 @@ pub async fn test_api(name: &'static str) -> TestApi {
     let file_path = std::path::Path::new(&root).join("db").join(name);
     std::fs::remove_dir_all(&file_path).ok();
     let connector = SledMigrationConnector::new(file_path).unwrap();
+    connector.initialize().await.unwrap();
     let engine = MigrationApi::new(connector).await.unwrap();
     TestApi { name, engine }
 }

@@ -1,10 +1,10 @@
 use crate::DatabaseValue;
 use serde::{Deserialize, Deserializer};
 
-pub(crate) fn read_record<'a, T>(
+pub(crate) fn read_record<'a, 'schema, T>(
     key: &'a [u8],
     value: &'a [u8],
-    table_metadata: &crate::schema::Table,
+    table_metadata: &'schema crate::schema::Table,
 ) -> Result<T, anyhow::Error>
 where
     T: Deserialize<'a>,

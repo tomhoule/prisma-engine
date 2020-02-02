@@ -23,7 +23,7 @@ impl SledMigrationConnector {
     }
 
     pub fn get_schema(&self) -> anyhow::Result<sled_wrapper::schema::Schema> {
-        Ok(self.connection.get_schema()?)
+        Ok(self.connection.schema()?.clone())
     }
 }
 
@@ -43,6 +43,10 @@ impl migration_connector::MigrationConnector for SledMigrationConnector {
     type DatabaseMigration = SledMigration;
 
     async fn initialize(&self) -> ConnectorResult<()> {
+        let persistence = self.migration_persistence();
+
+        persistence.init().await?;
+
         Ok(())
     }
 

@@ -1,5 +1,7 @@
 use migration_connector::*;
 
+const MIGRATIONS_TREE_NAME: &str = "_Migrations";
+
 pub struct SledMigrationPersistence<'a> {
     pub(super) connector: &'a super::SledMigrationConnector,
 }
@@ -14,8 +16,12 @@ impl SledMigrationPersistence<'_> {
 impl MigrationPersistence for SledMigrationPersistence<'_> {
     async fn init(&self) -> ConnectorResult<()> {
         let conn = self.conn();
-        let mut schema = conn.get_schema().unwrap();
-        debug_assert!(schema.tables.iter().find(|table| table.name == "_Migrations").is_none());
+        let mut schema = conn.schema().unwrap().clone();
+        // debug_assert!(schema
+        //     .tables
+        //     .iter()
+        //     .find(|table| table.name == MIGRATIONS_TREE_NAME)
+        //     .is_none());
 
         schema.tables.push(migration_table());
 
@@ -38,13 +44,17 @@ impl MigrationPersistence for SledMigrationPersistence<'_> {
 
     async fn load_all(&self) -> ConnectorResult<Vec<Migration>> {
         self.conn()
-            .scan("_Migrations")
+            .scan(MIGRATIONS_TREE_NAME)
             .map_err(|err| ConnectorError::from_kind(ErrorKind::QueryError(err)))?
             .map(|result| result.map_err(|err| ConnectorError::from_kind(ErrorKind::QueryError(err))))
             .collect::<Result<Vec<_>, _>>()
     }
 
     async fn create(&self, migration: Migration) -> ConnectorResult<Migration> {
+        let conn = self.conn();
+
+        conn.insert(MIGRATIONS_TREE_NAME, &migration).unwrap();
+
         Ok(migration)
     }
 
@@ -57,7 +67,7 @@ fn migration_table() -> sled_wrapper::schema::Table {
     use sled_wrapper::schema;
 
     schema::Table {
-        name: "_Migrations".to_owned(),
+        name: MIGRATIONS_TREE_NAME.to_owned(),
         id_columns: vec![schema::Column {
             name: "revision".to_owned(),
             required: true,
