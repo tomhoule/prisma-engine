@@ -34,16 +34,34 @@ struct RecordDeserializer<'a, 'meta> {
     table_metadata: &'meta schema::Table,
 }
 
-impl<'a, 'meta> RecordDeserializer {
-    fn read_values(&self) -> Vec<DatabaseValue<'a>> {
+// THE KEY IS DIFFERENT! The bytes in the key *have* to be ordered
+
+impl<'a, 'meta> RecordDeserializer<'a, 'meta> {
+    fn read_values(&self) -> anyhow::Result<Vec<DatabaseValue<'a>>> {
         let mut values = Vec::with_capacity(self.table_metadata.columns.len());
-        let cursor = std::io::Cursor::new(self.value);
+        let mut cursor = std::io::Cursor::new(self.value);
 
         let mut values_left = cursor.position() < (self.value.len() as u64 - 1);
-
         let mut colid: [u8; 1] = [0];
 
-        values
+        while values_left {
+            cursor.read_exact(&mut colid)?;
+
+            let column = self
+                .table_metadata
+                .columns
+                .get(colid[0] as usize)
+                .ok_or_else(|| anyhow::anyhow!("Invalid column id `{}`", colid[0]))?;
+
+            match column.r#type {
+                schema::ColumnType::String => todo!("read string column"),
+                schema::ColumnType::Boolean => todo!("read boolean column"),
+                schema::ColumnType::F64 => todo!("read F64 column"),
+                schema::ColumnType::I32 => todo!("read I32 column"),
+            }
+        }
+
+        Ok(values)
     }
 }
 
@@ -219,7 +237,7 @@ impl<'de, 'meta> Deserializer<'de> for RecordDeserializer<'de, 'meta> {
     where
         V: serde::de::Visitor<'de>,
     {
-        let values: Vec<DatabaseValue<'de>> = self.read_values()?;
+        let values: Vec<DatabaseValue<'de>> = self.read_values().expect("TODO: handle this");
         let id_cols_count = self.table_metadata.id_columns.len();
         let id_cols_iter = self.table_metadata.id_columns.iter().zip(fields.iter());
 
